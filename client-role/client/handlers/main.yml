@@ -1,0 +1,4 @@
+- name: "ssh-unit restart"
+  service:
+    name: "sshd"
+    state: restarted

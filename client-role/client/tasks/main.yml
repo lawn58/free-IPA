@@ -1,0 +1,58 @@
+- name: install freeIPA on client
+  yum: 
+  
+    name: freeipa-client
+    state: present
+
+- name: add users to sudo
+  template:
+    src: template/freeipa-admins.j2
+    dest: /etc/sudoers.d/freeipa-admins
+    owner: root
+    group: root
+    mode: 0660
+
+- name: change hostname
+  shell: hostname
+  register: client_hostname_value
+
+- set_fact:
+    client_hostname: "{{ client_hostname_value.stdout }}.local.com"
+
+- template:
+    src: template/ca.crt
+    dest: /etc/ipa/ca.crt
+
+   
+- name: enablemkhomedir
+  command: 'authconfig --enablemkhomedir --update'
+   
+   
+  
+- name: "client"
+  shell: "ipa-client-install -U --realm={{ freeipa_realm | default(ansible_domain) | upper }} --domain={{ freeipa_domain | default(ansible_domain) | lower }} -p admin -w {{ freeipa_admin_password }} --server={{ freeipa_servers | default([]) | first | default( groups.freeipa | default([ansible_fqdn]) | first ) }} {{ freeipa_client_install_options | default([]) | join(' ') }}"
+  args:
+    creates: /etc/ipa/default.conf
+  when:
+    freeipa_client|default(false)
+  tags: [ "freeipa", "configuration" ]
+
+   
+- name: clients homedir
+  lineinfile: 
+    dest: /etc/pam.d/password-auth
+    line: "session optional pam_oddjob_mkhomedir.so umask=0077"
+
+   
+   
+  
+  
+- name: change ChallengeResponseAuthentication yes
+  lineinfile: >
+     dest='/etc/ssh/sshd_config'
+     regexp='^ChallengeResponseAuthentication'
+     state=present
+     line='ChallengeResponseAuthentication yes'
+  notify:
+     - restart sshd
+ 

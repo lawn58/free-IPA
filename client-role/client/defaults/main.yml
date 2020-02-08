@@ -1,0 +1,8 @@
+freeipa_client_version: 4.7.0
+server_alias: lawn
+server_hostname: lawn.local.com
+domain: local.com
+realm: LOCAL.COM
+principal_user: admin
+principal_user_password: lawn58
+directory_manager_password: lawn58
